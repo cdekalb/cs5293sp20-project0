@@ -4,7 +4,7 @@
 import urllib.request
 
 def test_download():
-    url = ("http://normanpd.normanok.gov/filebrowser_download/657/2020-02-11%20Daily%20Incident%20Summary.pdf")
+    url = "http://normanpd.normanok.gov/filebrowser_download/657/2020-02-11%20Daily%20Incident%20Summary.pdf"
     data = urllib.request.urlopen(url).read()
     assert data != None, "Should not be empty"
 
