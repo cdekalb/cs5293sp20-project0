@@ -1,22 +1,23 @@
 import argparse
 import project0
 import urllib.request
+import tempfile
+import PyPDF2
 
 
-def download_data(url):
+def fetchincidents(url):
     # Sets the string url to link
     link = (url)
     # Downloads data from the url to an object data that can be read later
     data = urllib.request.urlopen(link).read()
 
-def read_data(data):
     fp = tempfile.TemporaryFile()
     # Write the pdf data to a temp file
     fp.write(data)
     # Set the curser of the file back to the begining
     fp.seek(0)
     # Read the PDF
-    pdfReader = PdfFileReader(fp)
+    pdfReader = PyPDF2.PdfFileReader(fp)
     pdfReader.getNumPages()
     # Get the first page
     page1 = pdfReader.getPage(0).extractText()

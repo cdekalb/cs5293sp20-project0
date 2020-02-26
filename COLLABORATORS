@@ -1,6 +1,6 @@
 GitHub | https://help.github.com/en/github/managing-files-in-a-repository/adding-a-file-to-a-repository-using-the-command-line | Helped me with adding, committing, and pushing files using git
 Real Python | https://realpython.com/python-testing/ | Helped me with writing python tests
-
-
-
-
+Python | https://docs.python.org/3/howto/regex.html | Helped me with implementing regular expressions
+Stack Overflow | https://stackoverflow.com/questions/46668264/how-can-i-remove-last-2-lines-from-a-string-in-python | Helped me with removing frivolous data left over from PDF extraction
+Stack Overflow | https://stackoverflow.com/questions/25977971/replace-every-third-comma-with-line-break | Helped me with converting one row of comma separated data into multiple rows by replacing every nth comma with a newline
+Python | https://docs.python.org/3.8/library/sqlite3.html | Helped me with sqlite3 syntax and implementation
