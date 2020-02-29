@@ -1,14 +1,13 @@
+# Test to ensure that data has been downloaded
 
-# Test to ensure that the function downloads data
+from project0 import main
 
-import urllib.request
-
-def test_download():
-    url = "http://normanpd.normanok.gov/filebrowser_download/657/2020-02-20%20Daily%20Incident%20Summary.pdf"
-    data = urllib.request.urlopen(url).read()
+def test_download(url):
+    data = fetchincidents(url)
     assert data != None, "Should not be empty"
 
 if __name__ == "__main__":
-    test_download()
+    url = "http://normanpd.normanok.gov/filebrowser_download/657/2020-02-20%20Daily%20Incident%20Summary.pdf"
+    test_download(url)
     print("Data successfully downloaded")
 

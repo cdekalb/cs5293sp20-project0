@@ -48,6 +48,9 @@ def extractincidents(data):
         # Edge case for datum that contain newline characters
         page[i] = page[i].replace(' \n', ' ')
 
+        # Edge case for datum that contain coordinates
+        page[i] = page[i].replace('-\n', '-')
+
         # Split the data on newline characters
         newLineSplit = page[i].split('\n')
 
@@ -86,6 +89,7 @@ def extractincidents(data):
                     # Let user know there is missing data for Date / Time of 
                     # the previous row
                     print("Missing data for Date / Time: " + tempPage[0] + "; Row omitted")
+                    print(i)
                     # Omit the row
                     tempPage.clear()
                 # Check if tempPage list is not empty
@@ -108,6 +112,9 @@ def extractincidents(data):
             # Iteratively store each row of data as a tuple
             incidentTuples.append(tuple(totalPage[i]))
 
+    for i in range(len(incidentTuples)):
+        [dateTime for dateTime in incidentTuples if incidentTuples[i]]
+
     return incidentTuples
 
 def createdb():
@@ -117,8 +124,10 @@ def createdb():
     # Create cursor object to perform SQL commands
     c = db.cursor()
 
-    c.execute('''DROP TABLE incidents''')
+    # Clear incidents table if it exists already
+    c.execute('''DROP TABLE IF EXISTS incidents''')
 
+    # Create new incidents table
     c.execute('''CREATE TABLE incidents (
     incident_time TEXT,
     incident_number TEXT,
@@ -127,33 +136,57 @@ def createdb():
     incident_ori TEXT
     )''')
 
+    # Save the changes to the database
     db.commit()
 
     return db
 
 def populatedb(db, incidents):
 
+    # Create cursor object to perform SQL commands
     c = db.cursor()
 
+    # Insert the data into the incidents table
     for i in range(len(incidents)):
         c.executemany('INSERT INTO incidents VALUES (?,?,?,?,?)', (incidents[i],))
-        
-    for row in c.execute('SELECT * FROM incidents LIMIT 50'):
-        print(row)
 
+    # Save the changes to the database
     db.commit
-
-    c.execute('SELECT * FROM incidents LIMIT 50')
-    print(c.fetchone())
 
     return db
 
-incidentdata = fetchincidents("http://normanpd.normanok.gov/filebrowser_download/657/2020-02-20%20Daily%20Incident%20Summary.pdf")
+def status(db):
+
+    # Create cursor object to perform SQL commands
+    c = db.cursor()
+
+    # Initialize list to hold the tuples of nature and count query
+    natureIncidents = []
+    # Initialize list to hold the list of nature and count query after the tuples
+    # of natureIncidents[] are converted to lists
+    natureIncidentsList = []
+
+    # Execute query to output the number of times a given nature appears in the
+    # database
+    for row in c.execute('SELECT nature, COUNT(*) FROM incidents GROUP BY nature ORDER BY nature'):
+        natureIncidents.append(row)
+    
+    # Store tuples of natureIncidents as a list
+    # Convert the second element in each list from integer to string
+    # Print the pipe separated nature and its corresponding count value 
+    for i in range(len(natureIncidents)):
+        natureIncidentsList.append(list(natureIncidents[i]))
+        natureIncidentsList[i][1] = str(natureIncidentsList[i][1])
+        print("|".join(natureIncidentsList[i]))
+
+incidentdata = fetchincidents("http://normanpd.normanok.gov/filebrowser_download/657/2020-02-18%20Daily%20Incident%20Summary.pdf")
 
 incidents = extractincidents(incidentdata)
 
 db = createdb()
 
 incidentDataBase = populatedb(db, incidents)
+
+status(db)
 
 db.close()
