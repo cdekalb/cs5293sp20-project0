@@ -1,5 +1,4 @@
 import argparse
-# import project0
 import urllib.request
 import tempfile
 import PyPDF2
@@ -12,6 +11,13 @@ def fetchincidents(url):
     data = urllib.request.urlopen(url).read()
 
     return data
+
+def dateTimeRegEx():
+    # Create regular expression for the date format
+    dateRegEx = r"(\d{1,2}\/\d{1,2}\/\d{4} \d{1,2}:\d{1,2})"
+    datePattern = re.compile(dateRegEx)
+
+    return datePattern
 
 def extractincidents(data):
 
@@ -30,14 +36,17 @@ def extractincidents(data):
     # Initialize list of pages to read in data
     page = []
 
-    # Get number of pages
-    numPages = pdfReader.getNumPages()
+    # Initialize string that will hold the concatenated pages
+    strPage = ""
 
     # Initialize a list to hold each list containing a row of data
     totalPage = []
 
     # Initialize a list to temporarily hold each row of data as it is being read in
     tempPage = []
+
+    # Get number of pages
+    numPages = pdfReader.getNumPages()
     
     for i in range(numPages):
         
@@ -59,68 +68,68 @@ def extractincidents(data):
         # Edge case for datum that contain newline characters
         page[i] = page[i].replace(' \n', ' ')
 
-        # Edge case for datum that contain coordinates
+        # Edge case 1 for datum that contain coordinates
         page[i] = page[i].replace('-\n', '-')
 
-        # Split the data on newline characters
-        newLineSplit = page[i].split('\n')
+    for n in range(numPages):
+        strPage = strPage + page[n]
+    # Split the data on newline characters
+    newLineSplit = strPage.split('\n')
 
-        # Create regular expression for the date format
-        dateRegEx = r"(\d{1,2}\/\d{1,2}\/\d{4} \d{1,2}:\d{1,2})"
-        datePattern = re.compile(dateRegEx)
+    # Create regular expression for the date format
+    datePattern = dateTimeRegEx()
 
-        # Counter for column of data; Set to 5 so that the code for the insertion of data into 
-        # list format assumes the next expected data is a date
-        count = 0
-        # Boolean stating whether the current row being operated on is the header
-        isHeader = True
+    # Counter for column of data
+    count = 0
+    # Boolean stating whether the current row being operated on is the header
+    isHeader = True
 
-        # Loop over each datum in the data
-        for text in newLineSplit:
-            # Check if the current row is the header
-            if(isHeader):
-                # Append the current datum to tempPage list
-                tempPage.append(text)
-                # Evaluate next column
-                count += 1
-                # Check if the datum is the last in the row
-                if(count == 5):
-                    # Empty the tempPage list
-                    tempPage.clear()
-                    # Leave the header row
-                    isHeader = False
-                # Evaluate each datum in the header row before moving on to 
-                # incidence data
-                continue
-
-            # Check if the current datum matches the date regular expression
-            if(datePattern.match(text)):
-                # Check if the number of columns in the previous row is not five
-                if(count != 5):
-                    # Let user know there is missing data for Date / Time of 
-                    # the previous row
-                    print("Missing data for Date / Time: " + tempPage[0] + "; Row omitted")
-                    # Omit the row
-                    tempPage.clear()
-                # Check if tempPage list is not empty
-                if(tempPage != []):
-                    # Append a copy of tempPage to the totalPage list
-                    totalPage.append(tempPage.copy())
-                    # Empty the tempPage list
-                    tempPage.clear()
-                # Reset count to 0
-                count = 0
-            # Append a copy of tempPage to the totalPage list
+    # Loop over each datum in the data
+    for text in newLineSplit:
+        # Check if the current row is the header
+        if(isHeader):
+            # Append the current datum to tempPage list
             tempPage.append(text)
             # Evaluate next column
             count += 1
+            # Check if the datum is the last in the row
+            if(count == 5):
+                # Empty the tempPage list
+                tempPage.clear()
+                # Leave the header row
+                isHeader = False
+            # Evaluate each datum in the header row before moving on to 
+            # incidence data
+            continue
 
-        # Initialize list to hold tuples of the data
-        incidentTuples = []
+        # Check if the current datum matches the date regular expression
+        if(datePattern.match(text)):
+            # Check if the number of columns in the previous row is not five
+            if(count != 5):
+                # Let user know there is missing data for Date / Time of 
+                # the previous row
+                print("Missing data for Date / Time: " + tempPage[0] + "; Row omitted")
+                # Omit the row
+                tempPage.clear()
+            # Check if tempPage list is not empty
+            if(tempPage != []):
+                # Append a copy of tempPage to the totalPage list
+                totalPage.append(tempPage.copy())
+                # Empty the tempPage list
+                tempPage.clear()
+            # Reset count to 0
+            count = 0
+        # Append a copy of tempPage to the totalPage list
+        tempPage.append(text)
+        # Evaluate next column
+        count += 1
 
-        for i in range(len(totalPage)):
-            # Iteratively store each row of data as a tuple
-            incidentTuples.append(tuple(totalPage[i]))
+    # Initialize list to hold tuples of the data
+    incidentTuples = []
+
+    for i in range(len(totalPage)):
+        # Iteratively store each row of data as a tuple
+        incidentTuples.append(tuple(totalPage[i]))
 
     return incidentTuples
 
@@ -154,8 +163,7 @@ def populatedb(db, incidents):
     c = db.cursor()
 
     # Insert the data into the incidents table
-    for i in range(len(incidents)):
-        c.executemany('INSERT INTO incidents VALUES (?,?,?,?,?)', (incidents[i],))
+    c.executemany('INSERT INTO incidents VALUES (?,?,?,?,?)', incidents)
 
     # Save the changes to the database
     db.commit
@@ -169,6 +177,7 @@ def status(db):
 
     # Initialize list to hold the tuples of nature and count query
     natureIncidents = []
+
     # Initialize list to hold the list of nature and count query after the tuples
     # of natureIncidents[] are converted to lists
     natureIncidentsList = []
@@ -176,7 +185,7 @@ def status(db):
     # Execute query to output the number of times a given nature appears in the
     # database
     for row in c.execute('SELECT nature, COUNT(*) FROM incidents GROUP BY nature ORDER BY nature'):
-        natureIncidents.append(row)    
+        natureIncidents.append(row)
     
     # Store tuples of natureIncidents as a list
     # Convert the second element in each list from integer to string
@@ -193,7 +202,7 @@ def main(url):
     # Extract Data
     incidents = extractincidents(data)
 	
-    # Create Dataase
+    # Create Database
     db = createdb()
 	
     # Insert Data
@@ -201,6 +210,9 @@ def main(url):
 	
     # Print Status
     status(db)
+
+    # Close the database
+    db.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

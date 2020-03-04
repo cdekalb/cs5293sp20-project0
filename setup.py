@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-        name='project0',
-        version='1.0',
+    name='project0',
+    version='1.0',
 	author='Creighton DeKalb',
 	authour_email='cdekalb@ou.edu',
 	packages=find_packages(exclude=('tests', 'docs')),
